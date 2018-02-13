@@ -1,10 +1,8 @@
 """Response Model"""
 
-import h11
 
-
-class Response(h11.Response):
-    """Response sent by API to platform instances."""
+class Answer:
+    """Answer sent back to server."""
 
     def __init__(self, body: str, title: str=None, url: str=None,
                  icon: str=None, related: list=None, is_object: bool=False,

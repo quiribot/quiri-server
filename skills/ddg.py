@@ -1,31 +1,31 @@
 import duckduckgo as ddg
 import asks
-from response import Response
+from answer import Answer
 
 client = asks.Session(connections=20)
 
 
-def ddg_ia(query):
+def ddg_ia(query: str) -> Answer:
     """Searches ddg."""
 
     result = ddg.query(query)
 
-    response = Response(body=None)
+    answer = Answer(body=None)
 
     if result.redirect.url != "":
-        response.body = result.redirect.url
+        answer.body = result.redirect.url
     elif result.answer.text != "":
-        response.body = f"_{result.answer.text}_"
+        answer.body = f"_{result.answer.text}_"
     elif result.abstract.text != "":
-        response.body = str(result.abstract.text)
-        response.url = result.abstract.url
-        response.icon = result.image.url
-        response.related = result.related
+        answer.body = str(result.abstract.text)
+        answer.url = result.abstract.url
+        answer.icon = result.image.url
+        answer.related = result.related
     elif len(result.related) is not 0:
-        response.title = "Did you mean..."
-        response.related = result.related
+        answer.title = "Did you mean..."
+        answer.related = result.related
     else:
         # XXX Find where it gets its data from
-        response.body = ddg.get_zci(query)
+        answer.body = ddg.get_zci(query)
 
-    return response
+    return answer
