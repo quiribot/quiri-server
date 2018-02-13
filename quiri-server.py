@@ -12,12 +12,12 @@ server = Server(router)
 
 
 @router.route('/parse')
-async def parse(event, params):
+async def parse(event, params) -> Response:
     ...
 
 
 @router.route('/search')
-async def search(event, params):
+async def search(event, params) -> Response:
     ...
 
 kernel = curio.Kernel()
