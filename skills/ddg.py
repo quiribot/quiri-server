@@ -1,6 +1,6 @@
 import duckduckgo as ddg
 import asks
-from answer import Answer
+from models import Answer
 
 client = asks.Session(connections=20)
 
@@ -10,7 +10,7 @@ def ddg_ia(query: str) -> Answer:
 
     result = ddg.query(query)
 
-    answer = Answer(body=None)
+    answer = Answer(reply="Nothing found")
 
     if result.redirect.url != "":
         answer.body = result.redirect.url
