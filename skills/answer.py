@@ -1,6 +1,7 @@
 """Answer Model"""
 
-from typing import List, Optional
+from typing import List, Optional, Union
+AdditionalData = Union[str, int, bool, List[str, int, bool]]
 
 
 class Answer:
@@ -21,13 +22,13 @@ class Answer:
         is_object (bool, optional): Is information a card/embed/etc.
         checkback (Optional[int], optional): /checkback after x long.
         provider (str, optional): What skill provided the information.
-        **additional: Any necessary additonal content.
+        **additional (AdditionalData): Any necessary additonal content.
     """
 
     def __init__(self, reply: str, title: str=None, body: str=None,
                  url: str=None, icon: str=None, related: List[str]=[],
                  is_object: bool=False, checkback: Optional[int]=None,
-                 provider: str="search", **additional):
+                 provider: str="search", **additional: AdditionalData):
         self.reply = reply
         self.title = title
         self.body = body
