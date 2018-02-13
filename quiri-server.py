@@ -11,14 +11,25 @@ router = Router()
 server = Server(router)
 
 
-@router.route('/parse')
-async def parse(event, params) -> Response:
+@router.route('/query')
+async def query(event, params) -> Response:
+    ...
+
+
+@router.route('/query/context')
+async def context_query(event, params) -> Response:
     ...
 
 
 @router.route('/search')
 async def search(event, params) -> Response:
     ...
+
+
+@router.route('/callback')
+async def callback(event, params) -> Response:
+    ...
+
 
 kernel = curio.Kernel()
 kernel.run(curio.tcp_server('0.0.0.0', 8080, server.tcp_handle))
