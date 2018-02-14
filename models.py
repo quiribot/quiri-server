@@ -21,6 +21,11 @@ class ServiceError(SkillError):
     pass
 
 
+class InvalidCheckback(SkillError):
+    """Thrown when given checkback cannot be serviced."""
+    pass
+
+
 class Answer:
     """Answer sent back to server by skill.
 
