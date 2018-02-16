@@ -6,7 +6,7 @@ AdditionalData = Union[str, int, bool, List[str, int, bool]]
 """Typing of all acceptable data types for **additional kwargs."""
 
 
-class SkillError:
+class SkillError(Exception):
     """Base Skill error."""
     pass
 
