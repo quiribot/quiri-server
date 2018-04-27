@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Callable
 
 from adapt.engine import IntentDeterminationEngine
+from adapt.intent import Intent
 
 
 class Query:
@@ -29,10 +30,7 @@ class Answer:
                 "last_miss": None,
                 "hit": False
             },
-            "engine": {
-                "name": "Unknown",
-                "url": None
-            }
+            "engine": None
         }
         self.answer = {
             "title": "No answer",
@@ -42,6 +40,7 @@ class Answer:
         }
         self.links = []
         self.trivia = {}
+        self.error = None
 
     def set_cache(self, last_miss: int, hit: bool) -> 'Answer':
         self.meta["cache"] = {"last_miss": last_miss, "hit": hit}
@@ -64,6 +63,10 @@ class Answer:
         }
         return self
 
+    def set_error(self, message: str, code: int = None) -> 'Answer':
+        self.error = {"message": message, "code": code}
+        return self
+
     def add_link(self,
                  title: str,
                  content: str,
@@ -82,13 +85,30 @@ class Answer:
         return self
 
     def build(self, skill: str, confidence: int) -> dict:
+        if self.error:
+            return json.dumps({
+                "meta": {
+                    "skill": skill,
+                    "confidence": confidence,
+                    "cache": {
+                        "last_miss": None,
+                        "hit": False
+                    },
+                    "engine": None
+                },
+                "answer": None,
+                "links": [],
+                "trivia": {},
+                "error": self.error
+            })
         self.meta["skill"] = skill
         self.meta["confidence"] = confidence
         return json.dumps({
             "meta": self.meta,
             "answer": self.answer,
             "links": self.links,
-            "trivia": self.trivia
+            "trivia": self.trivia,
+            "error": None
         })
 
 
@@ -105,6 +125,13 @@ def intent_handler(intent):
 class QuiriSkill(ABC):
     def __init__(self, engine: IntentDeterminationEngine):
         self.engine = engine
+        self._intents = {}
+
+    def register_intent(self, intent: Intent,
+                        method: Callable[[Query], Answer]) -> 'QuiriSkill':
+        self.engine.register_intent_parser(intent)
+        self._intents[intent.name] = method
+        return self
 
     @abstractmethod
     async def run(self, query: Query) -> Answer:
@@ -114,7 +141,7 @@ class QuiriSkill(ABC):
 class Core:
     def __init__(self):
         self.engine = IntentDeterminationEngine()
-        self.skills = {}
+        self._intents = {}
 
     def add_skill(
             self,
@@ -125,16 +152,16 @@ class Core:
             if not hasattr(method, "_intents"):
                 continue
             for intent in method._intents:
-                self.engine.register_intent_parser(intent)
-                self.skills[intent.name] = method
+                skill.register_intent(intent, method)
+        self._intents.update(skill._intents)
 
-    async def process(self, q, context) -> Answer:
+    async def process(self, q, context) -> str:
         try:
             intent = next(self.engine.determine_intent(q))
         except StopIteration:
             return None
         query = Query(q, context, intent)
         intent_type = intent["intent_type"]
-        skill = self.skills[intent_type]
+        skill = self._intents[intent_type]
         confidence = intent["confidence"]
         return (await skill(query)).build(intent_type, confidence)
