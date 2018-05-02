@@ -3,7 +3,7 @@ import json
 from abc import ABC, abstractmethod
 from typing import Callable
 
-from adapt.engine import IntentDeterminationEngine
+from adapt.engine import DomainIntentDeterminationEngine
 from adapt.intent import Intent
 
 
@@ -123,15 +123,34 @@ def intent_handler(intent):
 
 
 class QuiriSkill(ABC):
-    def __init__(self, engine: IntentDeterminationEngine):
+    def __init__(self, engine: DomainIntentDeterminationEngine):
         self.engine = engine
         self._intents = {}
 
     def register_intent(self, intent: Intent,
                         method: Callable[[Query], Answer]) -> 'QuiriSkill':
-        self.engine.register_intent_parser(intent)
+        self.engine.register_intent_parser(intent, domain=self.get_domain())
         self._intents[intent.name] = method
         return self
+
+    def register_entity(self,
+                        entity_value,
+                        entity_type,
+                        alias_of=None,
+                        domain=None):
+        if not domain:
+            domain = self.get_domain()
+        return self.engine.register_entity(
+            entity_value, entity_type, alias_of=alias_of, domain=domain)
+
+    def register_regex_entity(self, regex_str, domain=None):
+        if not domain:
+            domain = self.get_domain()
+        return self.engine.register_regex_entity(regex_str, domain=domain)
+
+    @property
+    def get_domain(self):
+        return 'quiri'
 
     @abstractmethod
     async def run(self, query: Query) -> Answer:
@@ -140,12 +159,12 @@ class QuiriSkill(ABC):
 
 class Core:
     def __init__(self):
-        self.engine = IntentDeterminationEngine()
+        self.engine = DomainIntentDeterminationEngine()
+        self.engine.register_regex_entity("(?P<Wildcard>.*)", domain="wildcard")
         self._intents = {}
 
-    def add_skill(
-            self,
-            skill_class: Callable[[IntentDeterminationEngine], QuiriSkill]):
+    def add_skill(self, skill_class: Callable[
+                 [DomainIntentDeterminationEngine], QuiriSkill]):
         skill = skill_class(self.engine)
         methods = inspect.getmembers(skill, predicate=inspect.ismethod)
         for (name, method) in methods:
