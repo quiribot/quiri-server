@@ -127,9 +127,13 @@ class QuiriSkill(ABC):
         self.engine = engine
         self._intents = {}
 
-    def register_intent(self, intent: Intent,
-                        method: Callable[[Query], Answer]) -> 'QuiriSkill':
-        self.engine.register_intent_parser(intent, domain=self.get_domain())
+    def register_intent(self,
+                        intent: Intent,
+                        method: Callable[[Query], Answer],
+                        domain=None) -> 'QuiriSkill':
+        if not domain:
+            domain = self.get_domain()
+        self.engine.register_intent_parser(intent, domain=domain)
         self._intents[intent.name] = method
         return self
 
@@ -160,11 +164,12 @@ class QuiriSkill(ABC):
 class Core:
     def __init__(self):
         self.engine = DomainIntentDeterminationEngine()
-        self.engine.register_regex_entity("(?P<Wildcard>.*)", domain="wildcard")
+        self.engine.register_regex_entity(
+            "(?P<Wildcard>.*)", domain="wildcard")
         self._intents = {}
 
     def add_skill(self, skill_class: Callable[
-                 [DomainIntentDeterminationEngine], QuiriSkill]):
+        [DomainIntentDeterminationEngine], QuiriSkill]):
         skill = skill_class(self.engine)
         methods = inspect.getmembers(skill, predicate=inspect.ismethod)
         for (name, method) in methods:
